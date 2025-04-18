@@ -1,5 +1,6 @@
 {% extends 'base_menu.html' %}
 {% load humanize %}
+{% load crispy_forms_tags %}
 
 
 {% block head %}
@@ -40,17 +41,19 @@
 
 {% if user.is_authenticated %}
 <br>
-<form method="post" action="{% url 'ads:ad_comment_create' ad.id %}">
-    {% csrf_token %}
-    {{ comment_form|crispy }}
-    <input type="submit" value="Submit">
-    <input type="submit" value="All Ads" onclick="window.location.href='{% url 'ads:all' %}';return false;">
-</form>
+<p>
+    <form method="post" action="{% url 'ads:ad_comment_create' ad.id %}">
+        {% csrf_token %}
+        {{ comment_form|crispy }}
+        <input type="submit" value="Submit">
+        <input type="submit" value="All Ads" onclick="window.location.href='{% url 'ads:all' %}';return false;">
+    </form>
+</p>
 {% endif %}
 
 {% for comment in comments %}
 <p>
-    {{ comment.text }} {{ comment.updated_at|naturaltime }}
+    {{ comment.text }} ({{ comment.updated_at|naturaltime }})
     {% if comment.owner == user %}
     <a href="{% url 'ads:ad_comment_delete' comment.id %}"><i class="fa fa-trash"></i></a>
     {% endif %}
