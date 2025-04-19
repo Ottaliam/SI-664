@@ -12,12 +12,13 @@ from .owner import *
 
 class AdListView(OwnerListView):
     model = Ad
+    template_name = 'ads/ad_list.html'
 
     def get(self, request):
         ad_list = Ad.objects.all()
         favorites = list()
         if request.user.is_authenticated:
-            rows = request.user.favorite_things.values("id")
+            rows = request.user.favorite_ads.values("id")
             favorites = [ row["id"] for row in rows ]
         ctx = {"ad_list": ad_list, "favorites": favorites}
         return render(request, self.template_name, ctx)
