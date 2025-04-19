@@ -13,6 +13,15 @@ from .owner import *
 class AdListView(OwnerListView):
     model = Ad
 
+    def get(self, request):
+        ad_list = Ad.objects.all()
+        favorites = list()
+        if request.user.is_authenticated:
+            rows = request.user.favorite_things.values("id")
+            favorites = [ row["id"] for row in rows ]
+        ctx = {"ad_list": ad_list, "favorites": favorites}
+        return render(request, self.template_name, ctx)
+
 
 class AdDetailView(OwnerDetailView):
     model = Ad
