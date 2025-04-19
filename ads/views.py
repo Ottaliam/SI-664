@@ -1,7 +1,10 @@
+from django.db import IntegrityError
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 
 from .forms import CreateForm, CommentForm
 from .models import *
@@ -9,6 +12,16 @@ from .owner import *
 
 class AdListView(OwnerListView):
     model = Ad
+    template_name = 'ads/ad_list.html'
+
+    def get(self, request):
+        ad_list = Ad.objects.all()
+        favorites = list()
+        if request.user.is_authenticated:
+            rows = request.user.favorite_ads.values("id")
+            favorites = [ row["id"] for row in rows ]
+        ctx = {"ad_list": ad_list, "favorites": favorites}
+        return render(request, self.template_name, ctx)
 
 
 class AdDetailView(OwnerDetailView):
@@ -95,3 +108,26 @@ class CommentDeleteView(OwnerDeleteView):
     def get_success_url(self):
         ad = self.object.ad
         return reverse('ads:ad_detail', args=[ad.id])
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AddFavoriteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        ad = get_object_or_404(Ad, id=pk)
+        fav = Fav(user=request.user, ad=ad)
+        try:
+            fav.save()
+        except IntegrityError:
+            pass
+        return HttpResponse("Favorite added 42")
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DeleteFavoriteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        ad = get_object_or_404(Ad, id=pk)
+        try:
+            Fav.objects.get(user=request.user, ad=ad).delete()
+        except Fav.DoesNotExist:
+            pass
+        return HttpResponse("Favorite deleted 42")
